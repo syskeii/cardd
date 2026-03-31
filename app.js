@@ -2,8 +2,8 @@
 const defaultProfile = {
     username: "syskei1",
     bio: "i like romance animes and love to code. welcome to my card ^^",
-    pfpUrl: "https://i.pinimg.com/736x/2c/8b/74/2c8b74fec9798efec11a43a75deffb49.jpg",
-    bgUrl: "https://w.wallhaven.cc/full/wq/wallhaven-wqpej7.jpg",
+    pfpUrl: "assets/Untitled342_20260304161053.png",
+    bgUrl: "assets/newbanner.png",
     musicUrl: "assets/MYGOD.mp3",
     cardBgHex: "#0a0a0a",
     cardOpacity: "0.4",
@@ -200,7 +200,6 @@ function applyStateToUI() {
         if (enterOverlay.classList.contains('hidden-overlay')) {
              bgMusic.play().catch(e => console.log('Autoplay prevented.'));
              audioToggle.classList.remove('hidden-element');
-             audioToggle.innerHTML = '<i class="fa-solid fa-volume-high"></i>';
         }
     } else if (!profileData.musicUrl) {
         bgMusic.pause();
@@ -477,19 +476,33 @@ function setupEventListeners() {
             bgMusic.volume = 0.5;
             bgMusic.play().then(() => {
                 audioToggle.classList.remove('hidden-element');
-                audioToggle.innerHTML = '<i class="fa-solid fa-volume-high"></i>';
             }).catch(console.log);
         }
     });
     
-    // Audio Toggle Listener
-    audioToggle.addEventListener('click', () => {
+    // Audio Controls
+    const muteBtn = document.getElementById('mute-btn');
+    const volumeSlider = document.getElementById('volume-slider');
+    
+    muteBtn.addEventListener('click', () => {
         if (bgMusic.paused) {
             bgMusic.play();
-            audioToggle.innerHTML = '<i class="fa-solid fa-volume-high"></i>';
+            muteBtn.innerHTML = '<i class="fa-solid fa-volume-high"></i>';
         } else {
             bgMusic.pause();
-            audioToggle.innerHTML = '<i class="fa-solid fa-volume-xmark"></i>';
+            muteBtn.innerHTML = '<i class="fa-solid fa-volume-xmark"></i>';
+        }
+    });
+    
+    volumeSlider.addEventListener('input', (e) => {
+        const vol = parseFloat(e.target.value);
+        bgMusic.volume = vol;
+        if (vol === 0) {
+            muteBtn.innerHTML = '<i class="fa-solid fa-volume-xmark"></i>';
+        } else if (vol < 0.5) {
+            muteBtn.innerHTML = '<i class="fa-solid fa-volume-low"></i>';
+        } else {
+            muteBtn.innerHTML = '<i class="fa-solid fa-volume-high"></i>';
         }
     });
 
@@ -535,21 +548,44 @@ function setupEventListeners() {
     Object.keys(inputs).forEach(key => {
         inputs[key].addEventListener('input', (e) => {
             let val = e.target.value;
-            switch(key) {
-                case 'username': profileData.username = val; break;
-                case 'bio': profileData.bio = val; break;
-                case 'pfp': profileData.pfpUrl = val; break;
-                case 'bg': profileData.bgUrl = val; break;
-                case 'music': profileData.musicUrl = val; break;
-                case 'cardBg': profileData.cardBgHex = val; break;
-                case 'cardOpacity': profileData.cardOpacity = val; break;
-                case 'textColor': profileData.textColor = val; break;
-                case 'accentColor': profileData.accentColor = val; break;
-                case 'pfpShape': profileData.pfpShape = val; break;
-                case 'layout': profileData.layout = val; break;
-                case 'enableTilt': profileData.enableTilt = val; break;
+            const updateState = () => {
+                switch(key) {
+                    case 'username': profileData.username = val; break;
+                    case 'bio': profileData.bio = val; break;
+                    case 'pfp': profileData.pfpUrl = val; break;
+                    case 'bg': profileData.bgUrl = val; break;
+                    case 'music': profileData.musicUrl = val; break;
+                    case 'cardBg': profileData.cardBgHex = val; break;
+                    case 'cardOpacity': profileData.cardOpacity = val; break;
+                    case 'textColor': profileData.textColor = val; break;
+                    case 'accentColor': profileData.accentColor = val; break;
+                    case 'pfpShape': profileData.pfpShape = val; break;
+                    case 'layout': profileData.layout = val; break;
+                    case 'enableTilt': profileData.enableTilt = val; break;
+                }
+                applyStateToUI();
+            };
+
+            if (key === 'layout') {
+                // Motion blur morph: blur peaks at 40%, swap layout there, unblur after
+                profileCard.classList.remove('layout-morphing');
+                // Force reflow to restart animation if switching rapidly
+                void profileCard.offsetWidth;
+                profileCard.classList.add('layout-morphing');
+                
+                // Swap layout at the peak of the blur (40% of 900ms = 360ms)
+                setTimeout(() => {
+                    profileData.layout = val;
+                    applyStateToUI();
+                }, 360);
+                
+                // Remove morphing class when animation finishes
+                setTimeout(() => {
+                    profileCard.classList.remove('layout-morphing');
+                }, 900);
+            } else {
+                updateState();
             }
-            applyStateToUI();
         });
     });
 
